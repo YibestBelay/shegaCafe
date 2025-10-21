@@ -22,17 +22,14 @@ export const authOptions: NextAuthOptions = {
       // 1️⃣ Check if user exists and role is 'waiter'
       const dbUser = await prisma.user.findUnique({ where: { email } });
       if (!dbUser) {
-        console.log(`Unauthorized: ${email} not in DB`);
         return false;
       }
-      if (dbUser.role !== "waiter") {
-        console.log(`Unauthorized: ${email} is not a waiter`);
-        return false;
-      }
+      // if (dbUser.role !== "waiter") {
+      //   return false;
+      // }
 
       // 2️⃣ Automatically create/link OAuth account if it doesn't exist
       if (!account) {
-        console.log(`Unauthorized: missing OAuth account for: ${email}`);
         return false;
       }
       const existingAccount = await prisma.account.findUnique({
@@ -55,10 +52,9 @@ export const authOptions: NextAuthOptions = {
             refresh_token: account.refresh_token,
           },
         });
-        console.log(`✅ OAuth account linked for: ${email}`);
+        
       }
 
-      console.log(`✅ Authorized waiter: ${email}`);
       return true;
     },
 
