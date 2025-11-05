@@ -8,13 +8,15 @@ import { useToast } from '@/hooks/use-toast';
 // REAL SERVER ACTIONS
 import {
   getMenuItems,
-  getUsers,
   getOrders,
   createOrder,
   updateOrderStatus as serverUpdateOrderStatus,
   updatePaymentStatus as serverUpdatePaymentStatus,
   clearCompletedOrders,
 } from '@/app/actions';
+
+// Only import getUsers when needed
+import { getUsers } from '@/app/actions';
 
 type UsersType = Awaited<ReturnType<typeof getUsers>>;
 type MenuItemsType = Awaited<ReturnType<typeof getMenuItems>>;
@@ -48,28 +50,51 @@ export function CafeProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<OrdersType>([] as any);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const [menu, userList, orderList] = await Promise.all([
+      // Always fetch menu & orders
+      const [menu, orderList] = await Promise.all([
         getMenuItems(),
-        getUsers(),
         getOrders(),
       ]);
       setMenuItems(menu);
-      setUsers(userList);
       setOrders(orderList);
-    } catch {
+
+      // Only fetch users if we're in admin context
+      const sessionRes = await fetch('/api/auth/session');
+      const session = await sessionRes.json();
+
+      if (session?.user?.role === 'Admin') {
+        setIsAdmin(true);
+        try {
+          const userList = await getUsers();
+          setUsers(userList);
+        } catch (err) {
+          console.warn('getUsers failed (expected for non-admin)');
+          setUsers([]);
+        }
+      } else {
+        setIsAdmin(false);
+        setUsers([]);
+      }
+    } catch (err) {
+      console.error('fetchAll error:', err);
       toast({ variant: 'destructive', title: 'Failed to load data' });
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => {
+    fetchAll();
+  }, []);
 
-  const refetch = fetchAll;
+  const refetch = async () => {
+    await fetchAll();
+  };
 
   // CART
   const addToCart = (id: number) => {
@@ -101,8 +126,8 @@ export function CafeProvider({ children }: { children: ReactNode }) {
 
   // PLACE ORDER
   const placeOrder = async (name: string, table: string, notes?: string) => {
-    if (cart.length === 0) { toast({ variant: 'destructive', title: 'Cart empty' }); return; }
-    if (!name || !table) { toast({ variant: 'destructive', title: 'Fill name & table' }); return; }
+    if (cart.length === 0) toast({ variant: 'destructive', title: 'Cart empty' });
+    if (!name || !table) toast({ variant: 'destructive', title: 'Fill name & table' });
 
     try {
       await createOrder({
@@ -163,8 +188,8 @@ export function CafeProvider({ children }: { children: ReactNode }) {
     clearCart,
     getCartTotal,
     placeOrder,
-    updateOrderStatus,      // ← REAL DB
-    updatePaymentStatus,    // ← REAL DB
+    updateOrderStatus,
+    updatePaymentStatus,
     clearSalesData,
     cartItemCount,
     loading,

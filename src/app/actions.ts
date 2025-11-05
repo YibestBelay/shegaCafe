@@ -7,21 +7,25 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import type { OrderStatus, PaymentStatus, MenuItem } from '@/lib/types';
 
 // ------------------------------------------------------------------
-// Helper: get logged-in user + role
+// Helper: get logged-in user (SAFE — returns null if not logged in)
 // ------------------------------------------------------------------
-async function getUser() {
+async function getUserOrNull() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.email) throw new Error('Unauthorized');
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { id: true, role: true, name: true },
-  });
-  if (!user) throw new Error('User not found');
-  return user;
+  if (!session?.user?.email) return null;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true, role: true, name: true },
+    });
+    return user;
+  } catch {
+    return null;
+  }
 }
 
 // ------------------------------------------------------------------
-// 1. MENU & USERS (public)
+// 1. MENU & USERS (PUBLIC — no login needed)
 // ------------------------------------------------------------------
 export async function getMenuItems(): Promise<MenuItem[]> {
   const rows = await prisma.menuItem.findMany({
@@ -33,23 +37,26 @@ export async function getMenuItems(): Promise<MenuItem[]> {
     return (CATEGORY_VALUES as readonly string[]).includes(x);
   }
 
-  return rows.map((r) => ({
+  return rows.map(r => ({
     ...r,
     category: isCategory(r.category) ? r.category : 'Food',
   }));
 }
 
 export async function getUsers() {
+  // Only admins should see full user list
+  const user = await getUserOrNull();
+  if (user?.role !== 'Admin') throw new Error('Admin only');
+
   return prisma.user.findMany({
-    select: { id: true, name: true, role: true, email: true },
+    select: { id: true, name: true, role: true, email: true},
   });
 }
 
 // ------------------------------------------------------------------
-// 2. ORDERS
+// 2. ORDERS (PUBLIC READ — anyone can view)
 // ------------------------------------------------------------------
 export async function getOrders() {
-  await getUser();
   return prisma.order.findMany({
     include: {
       items: {
@@ -62,7 +69,7 @@ export async function getOrders() {
 }
 
 // ──────────────────────────────────────────────────────────────
-// 3. PLACE ORDER → ANYONE (guest + staff)
+// 3. PLACE ORDER → GUEST + CUSTOMER + WAITER (NOT Chef/Admin)
 // ──────────────────────────────────────────────────────────────
 export async function createOrder(data: {
   customerName: string;
@@ -71,9 +78,9 @@ export async function createOrder(data: {
   total: number;
   notes?: string;
 }) {
-  let user;
-  try { user = await getUser(); } catch { user = null; }
+  const user = await getUserOrNull();
 
+  // Block Chef & Admin from placing orders
   if (user && ['Chef', 'Admin'].includes(user.role)) {
     throw new Error('Chefs & Admins cannot place orders');
   }
@@ -101,12 +108,11 @@ export async function createOrder(data: {
 // 4. UPDATE STATUS → Waiter, Chef, Admin
 // ------------------------------------------------------------------
 export async function updateOrderStatus(orderId: number, status: OrderStatus) {
-  const user = await getUser();
-
-  // FIXED: Use uppercase roles from DB
-  // if (!['Waiter', 'Chef', 'Admin'].includes(user.role)) {
-  //   throw new Error('Only Waiter, Chef or Admin can update status');
-  // }
+  const user = await getUserOrNull();
+  if (!user) throw new Error('Login required');
+  if (!['Waiter', 'Chef', 'Admin'].includes(user.role)) {
+    throw new Error('Only Waiter, Chef, or Admin can update status');
+  }
 
   return prisma.order.update({
     where: { id: orderId },
@@ -118,11 +124,11 @@ export async function updateOrderStatus(orderId: number, status: OrderStatus) {
 // 5. UPDATE PAYMENT → Waiter & Admin only
 // ------------------------------------------------------------------
 export async function updatePaymentStatus(orderId: number, status: PaymentStatus) {
-  const user = await getUser();
-
-    // if (!['Waiter', 'Admin'].includes(user.role)) {
-    //   throw new Error('Only Waiter or Admin can update payment');
-    // }
+  const user = await getUserOrNull();
+  if (!user) throw new Error('Login required');
+  if (!['Waiter', 'Admin'].includes(user.role)) {
+    throw new Error('Only Waiter or Admin can update payment');
+  }
 
   return prisma.order.update({
     where: { id: orderId },
@@ -131,11 +137,11 @@ export async function updatePaymentStatus(orderId: number, status: PaymentStatus
 }
 
 // ------------------------------------------------------------------
-// 6. CLEAR COMPLETED ORDERS (admin only)
+// 6. CLEAR COMPLETED ORDERS (Admin only)
 // ------------------------------------------------------------------
 export async function clearCompletedOrders() {
-  const user = await getUser();
-  if (user.role !== 'Admin') throw new Error('Admin only');
+  const user = await getUserOrNull();
+  if (!user || user.role !== 'Admin') throw new Error('Admin only');
 
   await prisma.orderItem.deleteMany({
     where: {
