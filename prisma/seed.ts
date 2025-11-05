@@ -13,7 +13,7 @@ async function main() {
     { name: 'Iced Latte', description: 'Chilled espresso with milk over ice.', price: 4.00, category: 'Drink', imageId: 'iced-latte' },
     { name: 'Fresh Orange Juice', description: 'Freshly squeezed orange juice.', price: 4.50, category: 'Drink', imageId: 'fresh-juice' },
     { name: 'Butter Croissant', description: 'Flaky and buttery, baked fresh.', price: 2.75, category: 'Food', imageId: 'croissant' },
-    { name: 'Spaghetti Aglio e Olio', description: 'A timeless Italian classic, this pasta dish features spaghetti tossed with sautéed garlic in olive oil, red pepper flakes for a touch of heat, and fresh parsley. A simple yet profoundly flavorful meal.', price: 12.50, category: 'Food', imageId: 'pasta-aglio-e-olio' },
+    { name: 'Spaghetti Aglio e Olio', isAvailable: false, description: 'A timeless Italian classic, this pasta dish features spaghetti tossed with sautéed garlic in olive oil, red pepper flakes for a touch of heat, and fresh parsley. A simple yet profoundly flavorful meal.', price: 12.50, category: 'Food', imageId: 'pasta-aglio-e-olio' },
     { name: 'Club Sandwich', description: 'Triple-decker with chicken, bacon, and lettuce.', price: 10.50, category: 'Food', imageId: 'club-sandwich' },
     { name: 'Margherita Pizza', description: 'A true Italian classic, this pizza features a light tomato sauce, fresh mozzarella, aromatic basil leaves, and a drizzle of olive oil on a perfectly crisp crust. Simple, fresh, and delicious.', price: 14.00, category: 'Food', imageId: 'margherita-pizza' },
     { name: 'Chocolate Lava Cake', description: 'Warm chocolate cake with a gooey center.', price: 6.50, category: 'Dessert', imageId: 'chocolate-cake' },
@@ -26,10 +26,10 @@ async function main() {
 
   // Seed Users
   const users = [
-    { name: 'Admin User', role: 'Admin', phone: '+11234567890', email: 'admin@shegacafe.com' },
-    { name: 'Alex', role: 'Waiter', phone: '+12345678901', email: 'waiter@shegacafe.com' },
-    { name: 'Ben', role: 'Chef', phone: '+13456789012', email: 'chef@shegacafe.com' },
-    { name: 'John Doe', role: 'Customer', phone: '+14567890123', email: 'customer@shegacafe.com' },
+    { name: 'Yibe', role: 'Admin', email: 'yibestbelay@gmail.com' },
+    { name: 'Alex', role: 'Waiter', email: 'waiter@shegacafe.com' },
+    { name: 'Ben', role: 'Chef', email: 'chef@shegacafe.com' },
+    { name: 'John Doe', role: 'Customer', email: 'customer@shegacafe.com' },
   ];
 
   for (const user of users) {

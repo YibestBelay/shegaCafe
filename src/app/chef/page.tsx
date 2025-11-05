@@ -3,8 +3,9 @@
 
 import { useSession, signIn } from "next-auth/react";
 import { useCafe } from '@/context/CafeContext';
-import OrderCard from '../components/waiter/OrderCard'; // ← SAME AS WAITER
+import OrderCard from '../components/waiter/OrderCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ChefHat, Package } from 'lucide-react';
 
 export default function ChefPage() {
   const { data: session, status } = useSession();
@@ -25,7 +26,6 @@ export default function ChefPage() {
     );
   }
 
-  // Accept chef / Chef
   if (!['chef', 'Chef'].includes(session.user.role)) {
     return (
       <div className="flex flex-col items-center justify-center h-screen">
@@ -37,9 +37,8 @@ export default function ChefPage() {
     );
   }
 
-  // CHEF SEES ONLY RELEVANT ORDERS
   const kitchenOrders = orders
-    .filter(order => ['Received', 'Sent to Chef', 'Preparing', 'Ready'].includes(order.status))
+    .filter(order => ['Received', 'Sent to Chef', 'Preparing', 'Ready'].includes(order.status) && order.status !== 'Cancelled')
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   const completedOrders = orders
@@ -49,16 +48,27 @@ export default function ChefPage() {
   return (
     <div className="space-y-8 p-6">
       <div className="text-center">
-        <h1 className="font-headline text-4xl md:text-5xl font-bold">Kitchen Dashboard</h1>
-        <p className="mt-2 text-lg text-muted-foreground">Manage cooking and preparation.</p>
+        <h1 className="font-headline text-4xl md:text-5xl font-bold flex items-center justify-center gap-3">
+          <ChefHat className="h-12 w-12 text-orange-600" />
+          Chef Dashboard
+        </h1>
+        <p className="mt-2 text-lg text-muted-foreground">Manage kitchen and menu availability.</p>
       </div>
 
       <Tabs defaultValue="kitchen" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
-          <TabsTrigger value="kitchen">Kitchen Orders</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto">
+          <TabsTrigger value="kitchen" className="flex items-center gap-1">
+            <ChefHat className="h-4 w-4" />
+            Kitchen
+          </TabsTrigger>
+          <TabsTrigger value="menu" className="flex items-center gap-1">
+            <Package className="h-4 w-4" />
+            Menu Control
+          </TabsTrigger>
           <TabsTrigger value="completed">Completed</TabsTrigger>
         </TabsList>
 
+        {/* KITCHEN ORDERS */}
         <TabsContent value="kitchen">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
             {kitchenOrders.length > 0 ? (
@@ -71,6 +81,17 @@ export default function ChefPage() {
           </div>
         </TabsContent>
 
+        {/* MENU CONTROL (TOGGLE ITEMS) */}
+        <TabsContent value="menu">
+          <div className="mt-6">
+            <p className="text-center text-muted-foreground mb-6">
+              Toggle items as <strong>Sold Out</strong> for the day.
+            </p>
+            <MenuControlTab />
+          </div>
+        </TabsContent>
+
+        {/* COMPLETED ORDERS */}
         <TabsContent value="completed">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
             {completedOrders.length > 0 ? (
@@ -83,6 +104,62 @@ export default function ChefPage() {
           </div>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+// ──────────────────────────────
+// MENU CONTROL TAB (REUSABLE)
+// ──────────────────────────────
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Eye, EyeOff } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+function MenuControlTab() {
+  const { menuItems, toggleMenuItem } = useCafe();
+  const { toast } = useToast();
+
+  const handleToggle = async (id: number, current: boolean) => {
+    try {
+      await toggleMenuItem(id, !current);
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: err.message || 'Failed to update' });
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {menuItems.map((item) => (
+        <Card key={item.id} className="shadow-md">
+          <CardHeader>
+            <CardTitle className="flex justify-between items-center text-lg">
+              {item.name}
+              <Badge variant={item.isAvailable ? 'default' : 'destructive'}>
+                {item.isAvailable ? 'Available' : 'Sold Out'}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">{item.description}</p>
+            <div className="flex items-center justify-between">
+              <span className="font-bold">{item.price.toFixed(2)} ETB</span>
+              <div className="flex items-center space-x-2">
+                {item.isAvailable ? (
+                  <EyeOff className="h-4 w-4 text-gray-500" />
+                ) : (
+                  <Eye className="h-4 w-4 text-green-500" />
+                )}
+                <Switch
+                  checked={item.isAvailable}
+                  onCheckedChange={() => handleToggle(item.id, item.isAvailable)}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }

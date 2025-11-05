@@ -1,3 +1,4 @@
+// app/components/MenuItemCard.tsx
 'use client';
 
 import Image from 'next/image';
@@ -18,19 +19,22 @@ export default function MenuItemCard({ item }: MenuItemCardProps) {
   const { addToCart } = useCafe();
   const placeholder = placeholderImages.find(p => p.id === item.imageId);
 
+  // HIDE IF NOT AVAILABLE
+  if (!item.isAvailable) return null;
+
   return (
     <Card className="flex flex-col overflow-hidden h-full">
       <CardHeader className="p-0">
         <div className="relative aspect-[4/3] w-full">
-            {placeholder && (
-                <Image
-                    src={placeholder.imageUrl}
-                    alt={item.name}
-                    fill
-                    className="object-cover"
-                    data-ai-hint={placeholder.imageHint}
-                />
-            )}
+          {placeholder && (
+            <Image
+              src={placeholder.imageUrl}
+              alt={item.name}
+              fill
+              className="object-cover"
+              data-ai-hint={placeholder.imageHint}
+            />
+          )}
         </div>
       </CardHeader>
       <CardContent className="p-4 flex-grow">

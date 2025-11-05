@@ -54,7 +54,7 @@ export default function WaiterPage() {
 
   // ✅ Authorized waiter — show dashboard
   const activeOrders = orders
-    .filter(order => !(order.paymentStatus === 'Paid' && order.status === 'Delivered'))
+    .filter(order => !(order.paymentStatus === 'Paid' && order.status === 'Delivered') && order.status !== 'Cancelled')
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   const completedOrders = orders

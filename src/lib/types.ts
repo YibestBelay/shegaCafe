@@ -5,6 +5,7 @@ export type MenuItem = {
   price: number;
   category: 'Food' | 'Drink' | 'Dessert';
   imageId: string;
+  isAvailable: boolean;
 };
 
 export type OrderItem = {

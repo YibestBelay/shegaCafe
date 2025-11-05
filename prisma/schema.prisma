@@ -74,6 +74,7 @@ model MenuItem {
   price       Float
   category    String
   imageId     String
+  isAvailable Boolean @default(true)
   orderItems  OrderItem[]
 }
 

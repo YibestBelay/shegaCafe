@@ -25,9 +25,9 @@ async function getUserOrNull() {
 }
 
 // ------------------------------------------------------------------
-// 1. MENU & USERS (PUBLIC — no login needed)
+// 1. MENU — FILTERED BY ROLE (CHEF & ADMIN SEE ALL)
 // ------------------------------------------------------------------
-export async function getMenuItems(): Promise<MenuItem[]> {
+export async function getMenuItems(userRole?: string): Promise<MenuItem[]> {
   const rows = await prisma.menuItem.findMany({
     orderBy: { id: 'asc' },
   });
@@ -37,16 +37,39 @@ export async function getMenuItems(): Promise<MenuItem[]> {
     return (CATEGORY_VALUES as readonly string[]).includes(x);
   }
 
-  return rows.map(r => ({
+  // CHEF & ADMIN: See all items (including hidden)
+  const isStaff = userRole && ['chef', 'admin'].includes(userRole.toLowerCase());
+  
+  // STRICT FILTER: ONLY SHOW isAvailable === true FOR NON-STAFF
+  const filtered = isStaff ? rows : rows.filter(r => r.isAvailable === true);
+
+  return filtered.map(r => ({
     ...r,
     category: isCategory(r.category) ? r.category : 'Food',
   }));
 }
 
-export async function getUsers() {
-  // Only admins should see full user list
+// ------------------------------------------------------------------
+// 2. TOGGLE ITEM AVAILABILITY (Chef & Admin only)
+// ------------------------------------------------------------------
+export async function toggleMenuItemAvailability(itemId: number, isAvailable: boolean) {
   const user = await getUserOrNull();
-  if (user?.role?.toLowerCase() !== 'admin') throw new Error('Admin only');
+  if (!user || !['chef', 'admin'].includes(user.role.toLowerCase())) {
+    throw new Error('Chef or Admin only');
+  }
+
+  return prisma.menuItem.update({
+    where: { id: itemId },
+    data: { isAvailable },
+  });
+}
+
+// ------------------------------------------------------------------
+// 3. USERS (Admin only)
+// ------------------------------------------------------------------
+export async function getUsers() {
+  const user = await getUserOrNull();
+  if (!user || user.role.toLowerCase() !== 'admin') throw new Error('Admin only');
 
   return prisma.user.findMany({
     select: { id: true, name: true, role: true, email: true },
@@ -54,7 +77,7 @@ export async function getUsers() {
 }
 
 // ------------------------------------------------------------------
-// 2. ORDERS (PUBLIC READ — anyone can view)
+// 4. ORDERS (PUBLIC READ)
 // ------------------------------------------------------------------
 export async function getOrders() {
   return prisma.order.findMany({
@@ -69,7 +92,7 @@ export async function getOrders() {
 }
 
 // ──────────────────────────────────────────────────────────────
-// 3. PLACE ORDER → GUEST + CUSTOMER + WAITER (NOT Chef/Admin)
+// 5. PLACE ORDER → GUEST + CUSTOMER + WAITER (NOT Chef/Admin)
 // ──────────────────────────────────────────────────────────────
 export async function createOrder(data: {
   customerName: string;
@@ -105,7 +128,7 @@ export async function createOrder(data: {
 }
 
 // ------------------------------------------------------------------
-// 4. UPDATE STATUS → Waiter, Chef, Admin
+// 6. UPDATE STATUS → Waiter, Chef, Admin
 // ------------------------------------------------------------------
 export async function updateOrderStatus(orderId: number, status: OrderStatus) {
   const user = await getUserOrNull();
@@ -121,7 +144,7 @@ export async function updateOrderStatus(orderId: number, status: OrderStatus) {
 }
 
 // ------------------------------------------------------------------
-// 5. UPDATE PAYMENT → Waiter & Admin only
+// 7. UPDATE PAYMENT → Waiter & Admin only
 // ------------------------------------------------------------------
 export async function updatePaymentStatus(orderId: number, status: PaymentStatus) {
   const user = await getUserOrNull();
@@ -137,7 +160,7 @@ export async function updatePaymentStatus(orderId: number, status: PaymentStatus
 }
 
 // ------------------------------------------------------------------
-// 6. CLEAR COMPLETED ORDERS (Admin only)
+// 8. CLEAR COMPLETED ORDERS (Admin only)
 // ------------------------------------------------------------------
 export async function clearCompletedOrders() {
   const user = await getUserOrNull();
@@ -157,5 +180,22 @@ export async function clearCompletedOrders() {
       status: { in: ['Delivered', 'Cancelled'] },
       paymentStatus: 'Paid',
     },
+  });
+}
+// src/app/actions.ts
+export async function deleteOrder(orderId: number) {
+  const user = await getUserOrNull();
+  if (!user || user.role.toLowerCase() !== 'admin') {
+    throw new Error('Admin only');
+  }
+
+  // Delete order items first
+  await prisma.orderItem.deleteMany({
+    where: { orderId },
+  });
+
+  // Then delete order
+  await prisma.order.delete({
+    where: { id: orderId },
   });
 }

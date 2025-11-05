@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo, ReactNo
 import type { CartItem, OrderStatus, PaymentStatus } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
-// REAL SERVER ACTIONS
+// SERVER ACTIONS
 import {
   getMenuItems,
   getOrders,
@@ -13,9 +13,9 @@ import {
   updateOrderStatus as serverUpdateOrderStatus,
   updatePaymentStatus as serverUpdatePaymentStatus,
   clearCompletedOrders,
+  toggleMenuItemAvailability,
 } from '@/app/actions';
 
-// Only import getUsers when needed
 import { getUsers } from '@/app/actions';
 
 type UsersType = Awaited<ReturnType<typeof getUsers>>;
@@ -35,6 +35,7 @@ interface CafeContextType {
   updateOrderStatus: (id: number, status: OrderStatus) => Promise<void>;
   updatePaymentStatus: (id: number, status: PaymentStatus) => Promise<void>;
   clearSalesData: () => Promise<void>;
+  toggleMenuItem: (id: number, available: boolean) => Promise<void>;
   cartItemCount: number;
   loading: boolean;
   refetch: () => Promise<void>;
@@ -45,39 +46,36 @@ const CafeContext = createContext<CafeContextType | undefined>(undefined);
 export function CafeProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
-  const [menuItems, setMenuItems] = useState<MenuItemsType>([] as any);
-  const [users, setUsers] = useState<UsersType>([] as any);
-  const [orders, setOrders] = useState<OrdersType>([] as any);
+  const [menuItems, setMenuItems] = useState<MenuItemsType>([]);
+  const [users, setUsers] = useState<UsersType>([]);
+  const [orders, setOrders] = useState<OrdersType>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   const fetchAll = async () => {
     setLoading(true);
     try {
-      // Always fetch menu & orders
-      const [menu, orderList] = await Promise.all([
-        getMenuItems(),
-        getOrders(),
-      ]);
+      // GET SESSION FIRST
+      const sessionRes = await fetch('/api/auth/session');
+      const session = await sessionRes.json();
+      const userRole = session?.user?.role; // ← CAN BE null
+
+      // PASS ROLE — EVEN IF null → FILTERS HIDDEN ITEMS
+      const menu = await getMenuItems(userRole); // ← CRITICAL: PASS ROLE
+      const orderList = await getOrders();
+
       setMenuItems(menu);
       setOrders(orderList);
 
-      // Only fetch users if we're in admin context
-      const sessionRes = await fetch('/api/auth/session');
-      const session = await sessionRes.json();
-
-      if (session?.user?.role === 'Admin') {
-        setIsAdmin(true);
+      // Only fetch users if Admin
+      if (userRole?.toLowerCase() === 'admin') {
         try {
           const userList = await getUsers();
           setUsers(userList);
-        } catch (err) {
-          console.warn('getUsers failed (expected for non-admin)');
+        } catch {
           setUsers([]);
         }
       } else {
-        setIsAdmin(false);
         setUsers([]);
       }
     } catch (err) {
@@ -126,8 +124,14 @@ export function CafeProvider({ children }: { children: ReactNode }) {
 
   // PLACE ORDER
   const placeOrder = async (name: string, table: string, notes?: string) => {
-    if (cart.length === 0) toast({ variant: 'destructive', title: 'Cart empty' });
-    if (!name || !table) toast({ variant: 'destructive', title: 'Fill name & table' });
+    if (cart.length === 0) {
+      toast({ variant: 'destructive', title: 'Cart empty' });
+      return;
+    }
+    if (!name || !table) {
+      toast({ variant: 'destructive', title: 'Fill name & table' });
+      return;
+    }
 
     try {
       await createOrder({
@@ -145,12 +149,12 @@ export function CafeProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // REAL DB STATUS UPDATES
+  // STATUS & PAYMENT
   const updateOrderStatus = async (orderId: number, status: OrderStatus) => {
     try {
       await serverUpdateOrderStatus(orderId, status);
       await refetch();
-      toast({ title: `Status → ${status}` });
+      toast({ title: `Status to ${status}` });
     } catch {
       toast({ variant: 'destructive', title: 'Status update failed' });
     }
@@ -160,7 +164,7 @@ export function CafeProvider({ children }: { children: ReactNode }) {
     try {
       await serverUpdatePaymentStatus(orderId, status);
       await refetch();
-      toast({ title: 'Payment → Paid' });
+      toast({ title: 'Payment to Paid' });
     } catch {
       toast({ variant: 'destructive', title: 'Payment update failed' });
     }
@@ -173,6 +177,17 @@ export function CafeProvider({ children }: { children: ReactNode }) {
       toast({ title: 'Old orders cleared' });
     } catch {
       toast({ variant: 'destructive', title: 'Clear failed' });
+    }
+  };
+
+  // CHEF MENU CONTROL
+  const toggleMenuItem = async (id: number, available: boolean) => {
+    try {
+      await toggleMenuItemAvailability(id, available);
+      await refetch();
+      toast({ title: available ? 'Back in stock!' : 'Sold out!' });
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: err.message || 'Update failed' });
     }
   };
 
@@ -191,6 +206,7 @@ export function CafeProvider({ children }: { children: ReactNode }) {
     updateOrderStatus,
     updatePaymentStatus,
     clearSalesData,
+    toggleMenuItem,
     cartItemCount,
     loading,
     refetch,
