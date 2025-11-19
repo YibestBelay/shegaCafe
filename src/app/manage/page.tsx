@@ -114,7 +114,7 @@ export default function UserManagement() {
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded-md"
             disabled={loading}
           >
-            {loading ? "Processing..." : "Add"}
+            {loading ? "Processing..." : "Add / Update"}
           </button>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import type { MenuItem, User, Order } from './types';
+import type { MenuItem, AppUser, Order } from './types';
 
 export const menuItems: MenuItem[] = [
   { id: 1, name: 'Cappuccino', description: 'Classic espresso with steamed milk foam.', price: 3.50, category: 'Drink', imageId: 'cappuccino' },
@@ -13,11 +13,11 @@ export const menuItems: MenuItem[] = [
   { id: 9, name: 'NY Cheesecake', description: 'Creamy cheesecake with a graham cracker crust.', price: 5.75, category: 'Dessert', imageId: 'cheesecake' },
 ];
 
-export const users: User[] = [
-  { id: 1, name: 'Admin User', role: 'Admin', phone: '+11234567890', email: 'admin@shegacafe.com' },
-  { id: 2, name: 'Alex', role: 'Waiter', phone: '+12345678901', email: 'waiter@shegacafe.com' },
-  { id: 3, name: 'Ben', role: 'Chef', phone: '+13456789012', email: 'chef@shegacafe.com' },
-  { id: 4, name: 'John Doe', role: 'Customer', phone: '+14567890123', email: 'customer@shegacafe.com' },
+export const users: AppUser[] = [
+  { id: 1, name: 'Admin User', role: 'ADMIN', phone: '+11234567890', email: 'admin@shegacafe.com' },
+  { id: 2, name: 'Alex', role: 'WAITER', phone: '+12345678901', email: 'waiter@shegacafe.com' },
+  { id: 3, name: 'Ben', role: 'CHEF', phone: '+13456789012', email: 'chef@shegacafe.com' },
+  { id: 4, name: 'John Doe', role: 'USER', phone: '+14567890123', email: 'customer@shegacafe.com' },
 ];
 
 export const initialOrders: Order[] = [

@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { CafeProvider } from '@/context/CafeContext';
 import Header from '@/components/common/Header';
+import { Providers } from "./provider";
 
 export const metadata: Metadata = {
   title: 'Shega Cafe',
@@ -22,11 +23,13 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
+        <Providers>
           <CafeProvider>
             <Header />
             <main className="container mx-auto px-4 py-8">{children}</main>
             <Toaster />
           </CafeProvider>
+        </Providers>
       </body>
     </html>
   );

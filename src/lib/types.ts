@@ -5,6 +5,7 @@ export type MenuItem = {
   price: number;
   category: 'Food' | 'Drink' | 'Dessert';
   imageId: string;
+  isAvailable: boolean;
 };
 
 export type OrderItem = {
@@ -27,15 +28,44 @@ export type Order = {
   notes?: string;
 };
 
-export type UserRole = 'Admin' | 'Waiter' | 'Chef' | 'Customer';
+export type UserRole = 'USER' | 'WAITER' | 'CHEF' | 'ADMIN';
 
-export type User = {
+// Extend the built-in session types
+declare module 'next-auth' {
+  interface Session {
+    user: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+      role: string;
+    };
+  }
+
+  interface User {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    role: string;
+  }
+}
+
+// Extend the built-in JWT types
+declare module 'next-auth/jwt' {
+  interface JWT {
+    id: string;
+    role: string;
+  }
+}
+
+export interface AppUser {
   id: number;
   name: string;
   role: UserRole;
   phone: string;
   email: string;
-};
+}
 
 export type CartItem = {
   menuItemId: number;

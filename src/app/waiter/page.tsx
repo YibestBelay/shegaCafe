@@ -1,19 +1,65 @@
-
 'use client';
 
+import { useSession, signIn } from "next-auth/react";
 import { useCafe } from '@/context/CafeContext';
 import OrderCard from '../components/waiter/OrderCard';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 export default function WaiterPage() {
+  const { data: session, status } = useSession();
   const { orders } = useCafe();
 
-  const activeOrders = orders.filter(order => !(order.paymentStatus === 'Paid' && order.status === 'Delivered'))
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    
-  const completedOrders = orders.filter(order => order.paymentStatus === 'Paid' && order.status === 'Delivered')
+  // Handle loading state
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
+        <p className="text-lg">Loading...</p>
+      </div>
+    );
+  }
+
+  // Not signed in
+  if (!session) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-8rem)]">
+        <h2 className="text-2xl font-semibold mb-4">Please log in with a Waiter Account to continue</h2>
+        <button
+          onClick={() => signIn("google")}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+        >
+          Sign in with Google
+        </button>
+      </div>
+    );
+  }
+
+  // Signed in but not a waiter
+  if (session.user.role !== "waiter") {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-8rem)]">
+        
+        <p className="text-gray-600 mb-4">
+          You are not authorized to view the Waiter Dashboard.
+        </p>
+        <button
+          onClick={() => signIn("google")}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+        >
+          Sign in with a Waiter Account
+        </button>
+      </div>
+    );
+  }
+
+  // ✅ Authorized waiter — show dashboard
+  const activeOrders = orders
+    .filter(order => !(order.paymentStatus === 'Paid' && order.status === 'Delivered') && order.status !== 'Cancelled')
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
+  const completedOrders = orders
+    .filter(order => order.paymentStatus === 'Paid' && order.status === 'Delivered')
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   return (
     <div className="space-y-8">
