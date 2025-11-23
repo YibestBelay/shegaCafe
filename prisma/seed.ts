@@ -26,10 +26,9 @@ async function main() {
 
   // Seed Users
   const users = [
-    { name: 'Yibe', role: 'Admin', email: 'yibestbelay@gmail.com' },
-    { name: 'Alex', role: 'Waiter', email: 'waiter@shegacafe.com' },
-    { name: 'Ben', role: 'Chef', email: 'chef@shegacafe.com' },
-    { name: 'John Doe', role: 'Customer', email: 'customer@shegacafe.com' },
+    { name: 'Yibe', role: 'admin', email: 'yibestbelay@gmail.com' },
+    { name: 'Nati', role: 'waiter', email: 'yibest12@shegacafe.com' },
+   
   ];
 
   for (const user of users) {

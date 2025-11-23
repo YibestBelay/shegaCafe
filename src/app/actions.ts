@@ -103,9 +103,9 @@ export async function createOrder(data: {
 }) {
   const user = await getUserOrNull();
 
-  // Block Chef & Admin from placing orders
-  if (user && ['chef', 'admin'].includes(user.role.toLowerCase())) {
-    throw new Error('Chefs & Admins cannot place orders');
+  // Block Chef from placing orders
+  if (user && user.role.toLowerCase() === 'chef') {
+    throw new Error('Chefs cannot place orders');
   }
 
   return prisma.order.create({
