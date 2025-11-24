@@ -6,6 +6,16 @@ import { usePathname } from 'next/navigation';
 import Logo from './Logo';
 import { cn } from '@/lib/utils';
 import OrderCart from '@/app/components/customer/OrderCart';
+import { Button } from '@/components/ui/button';
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { Menu } from 'lucide-react';
 
 const navLinks = [
   { href: '/', label: 'Customer' },
@@ -36,8 +46,47 @@ export default function Header() {
             </Link>
           ))}
         </nav>
-        <div className="flex flex-1 items-center justify-end space-x-4">
+        <div className="flex flex-1 items-center justify-end space-x-2">
           {pathname === '/' && <OrderCart />}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                aria-label="Open navigation menu"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="flex flex-col">
+              <SheetHeader className="text-left">
+                <SheetTitle>Navigate</SheetTitle>
+              </SheetHeader>
+              <div className="mt-6 flex flex-col space-y-4 text-lg font-medium">
+                {navLinks.map(({ href, label }) => (
+                  <SheetClose asChild key={label}>
+                    <Link
+                      href={href}
+                      className={cn(
+                        'transition-colors hover:text-primary',
+                        pathname === href
+                          ? 'text-primary'
+                          : 'text-muted-foreground'
+                      )}
+                    >
+                      {label}
+                    </Link>
+                  </SheetClose>
+                ))}
+              </div>
+              <SheetClose asChild>
+                <Button variant="outline" className="mt-auto w-full">
+                  Go back
+                </Button>
+              </SheetClose>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>

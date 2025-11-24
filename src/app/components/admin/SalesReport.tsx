@@ -42,17 +42,17 @@ export default function SalesReport() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <CardTitle className="font-headline text-3xl">Sales Report</CardTitle>
-            <CardDescription>
+            <CardDescription className="text-base sm:text-lg">
               {totalOrders} paid orders • {totalRevenue.toFixed(0)} ETB
             </CardDescription>
           </div>
 
           {/* ← ONLY RENDER BUTTONS AFTER MOUNT */}
           {mounted && (
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <DownloadPdfButton orders={completedOrders} />
 
               <AlertDialog>
@@ -89,35 +89,52 @@ export default function SalesReport() {
             No sales yet. First customer incoming! ☕
           </p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <>
+            <div className="md:hidden space-y-3">
               {completedOrders.map(o => (
-                <TableRow key={o.id}>
-                  <TableCell>#{o.id}</TableCell>
-                  <TableCell>{o.customerName}</TableCell>
-                  <TableCell>{new Date(o.timestamp).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">{o.total.toFixed(2)} ETB</TableCell>
-                </TableRow>
+                <div key={o.id} className="rounded-lg border p-4 shadow-sm">
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <span>#{o.id}</span>
+                    <span>{new Date(o.timestamp).toLocaleDateString()}</span>
+                  </div>
+                  <div className="mt-2 text-lg font-semibold">{o.customerName}</div>
+                  <div className="mt-1 text-primary font-bold">{o.total.toFixed(2)} ETB</div>
+                </div>
               ))}
-            </TableBody>
-            <TableFooter>
-              <TableRow className="font-bold text-lg">
-                <TableCell colSpan={2}>TOTAL</TableCell>
-                <TableCell>{totalOrders} orders</TableCell>
-                <TableCell className="text-right text-primary">
-                  {totalRevenue.toFixed(2)} ETB
-                </TableCell>
-              </TableRow>
-            </TableFooter>
-          </Table>
+            </div>
+
+            <div className="hidden md:block overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {completedOrders.map(o => (
+                    <TableRow key={o.id}>
+                      <TableCell>#{o.id}</TableCell>
+                      <TableCell>{o.customerName}</TableCell>
+                      <TableCell>{new Date(o.timestamp).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-right">{o.total.toFixed(2)} ETB</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+                <TableFooter>
+                  <TableRow className="font-bold text-lg">
+                    <TableCell colSpan={2}>TOTAL</TableCell>
+                    <TableCell>{totalOrders} orders</TableCell>
+                    <TableCell className="text-right text-primary">
+                      {totalRevenue.toFixed(2)} ETB
+                    </TableCell>
+                  </TableRow>
+                </TableFooter>
+              </Table>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>
