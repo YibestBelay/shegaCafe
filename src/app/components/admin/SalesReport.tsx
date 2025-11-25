@@ -33,7 +33,6 @@ export default function SalesReport() {
   const completedOrders = orders.filter(o => o.status === 'Delivered' && o.paymentStatus === 'Paid');
   const totalRevenue = completedOrders.reduce((sum, o) => sum + o.total, 0);
   const totalOrders = completedOrders.length;
-
   const handleDelete = async () => {
     await clearSalesData();
     toast({ title: "Deleted!", description: `${totalOrders} orders gone forever.`, variant: "destructive" });
@@ -98,6 +97,11 @@ export default function SalesReport() {
                     <span>{new Date(o.timestamp).toLocaleDateString()}</span>
                   </div>
                   <div className="mt-2 text-lg font-semibold">{o.customerName}</div>
+                  {o.items?.length ? (
+                    <div className="mt-1 text-sm text-muted-foreground">
+                      {o.items.map(item => `${item.quantity}x ${item.menuItem?.name ?? `Item #${item.menuItemId}`}`).join(', ')}
+                    </div>
+                  ) : null}
                   <div className="mt-1 text-primary font-bold">{o.total.toFixed(2)} ETB</div>
                 </div>
               ))}
@@ -109,6 +113,7 @@ export default function SalesReport() {
                   <TableRow>
                     <TableHead>ID</TableHead>
                     <TableHead>Customer</TableHead>
+                    <TableHead>Items</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                   </TableRow>
@@ -118,6 +123,13 @@ export default function SalesReport() {
                     <TableRow key={o.id}>
                       <TableCell>#{o.id}</TableCell>
                       <TableCell>{o.customerName}</TableCell>
+                      <TableCell className="max-w-sm">
+                        {o.items?.length
+                          ? o.items
+                              .map(item => `${item.quantity}x ${item.menuItem?.name ?? `Item #${item.menuItemId}`}`)
+                              .join(', ')
+                          : '—'}
+                      </TableCell>
                       <TableCell>{new Date(o.timestamp).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">{o.total.toFixed(2)} ETB</TableCell>
                     </TableRow>
@@ -125,7 +137,7 @@ export default function SalesReport() {
                 </TableBody>
                 <TableFooter>
                   <TableRow className="font-bold text-lg">
-                    <TableCell colSpan={2}>TOTAL</TableCell>
+                    <TableCell colSpan={3}>TOTAL</TableCell>
                     <TableCell>{totalOrders} orders</TableCell>
                     <TableCell className="text-right text-primary">
                       {totalRevenue.toFixed(2)} ETB

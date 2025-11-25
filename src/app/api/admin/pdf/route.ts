@@ -4,6 +4,38 @@ import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
+type PdfOrder = {
+  id: number;
+  customerName: string;
+  tableNumber: string;
+  total: number;
+  status: string;
+  paymentStatus: string;
+  timestamp: string;
+  items?: {
+    menuItemId: number;
+    quantity: number;
+    menuItem?: { id: number; name: string };
+  }[];
+};
+
+function wrapText(text: string, maxChars: number) {
+  if (!text) return ['-'];
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let current = '';
+  words.forEach(word => {
+    if ((current + word).length <= maxChars) {
+      current = current ? `${current} ${word}` : word;
+    } else {
+      if (current) lines.push(current);
+      current = word;
+    }
+  });
+  if (current) lines.push(current);
+  return lines;
+}
+
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (session?.user?.role !== 'admin') {
@@ -11,6 +43,7 @@ export async function POST(req: Request) {
   }
 
   const { orders } = await req.json();
+  const typedOrders = (orders as PdfOrder[]) ?? [];
 
   const pdfDoc = await PDFDocument.create();
   let page = pdfDoc.addPage([600, 800]);
@@ -39,7 +72,7 @@ export async function POST(req: Request) {
   });
 
   y -= 30;
-  page.drawText(`Total Orders: ${orders.length}`, {
+  page.drawText(`Total Orders: ${typedOrders.length}`, {
     x: 50,
     y,
     size: 14,
@@ -48,31 +81,79 @@ export async function POST(req: Request) {
 
   // Table Header
   y -= 30;
-  const headers = ['ID', 'Customer', 'Table', 'Total', 'Status', 'Paid', 'Time'];
-  headers.forEach((h, i) => {
-    page.drawText(h, { x: 50 + i * 70, y, size: 10, font: fontBold });
+  const columns = [
+    { label: 'Customer', width: 90, getValue: (o: PdfOrder) => o.customerName },
+    {
+      label: 'Items',
+      width: 220,
+      getValue: (o: PdfOrder) =>
+        o.items?.length ? o.items.map(item => `${item.quantity}x ${item.menuItem?.name ?? `Item #${item.menuItemId}`}`).join(', ') : '-',
+    },
+    { label: 'Table', width: 60, getValue: (o: PdfOrder) => o.tableNumber },
+    { label: 'Total', width: 70, getValue: (o: PdfOrder) => `${o.total.toFixed(2)} ETB` },
+    {
+      label: 'Time',
+      width: 70,
+      getValue: (o: PdfOrder) => new Date(o.timestamp).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }),
+    },
+  ] as const;
+
+  let currentX = 50;
+  const columnPositions = columns.map(col => {
+    const pos = currentX;
+    currentX += col.width;
+    return pos;
   });
 
+  const itemColumnIndex = columns.findIndex(col => col.label === 'Items');
+  if (itemColumnIndex === -1) {
+    throw new Error('Items column definition missing');
+  }
+
+  columns.forEach((col, idx) => {
+    page.drawText(col.label, { x: columnPositions[idx], y, size: 10, font: fontBold });
+  });
+
+  const lineHeight = 14;
+
   // Table Rows
-  y -= 20;
-  for (const o of orders) {
-    const row = [
-      `#${o.id}`,
-      o.customerName.slice(0, 10),
-      o.tableNumber,
-      `${o.total.toFixed(2)} ETB`,
-      o.status,
-      o.paymentStatus,
-      new Date(o.timestamp).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }),
-    ];
-    row.forEach((cell, i) => {
-      page.drawText(cell, { x: 50 + i * 70, y, size: 9, font });
+  y -= 18;
+  for (const o of typedOrders) {
+    const itemsText = columns[itemColumnIndex].getValue(o);
+    const itemLines = wrapText(itemsText, 50);
+    const rowLines = Math.max(1, itemLines.length);
+    const rowHeight = rowLines * lineHeight;
+
+    columns.forEach((col, idx) => {
+      const value = col.label === 'Items' ? null : col.getValue(o);
+      if (idx === itemColumnIndex) {
+        itemLines.forEach((line, lineIdx) => {
+          page.drawText(line, {
+            x: columnPositions[idx],
+            y: y - lineIdx * lineHeight,
+            size: 9,
+            font,
+          });
+        });
+      } else {
+        page.drawText(value ?? '-', {
+          x: columnPositions[idx],
+          y,
+          size: 9,
+          font,
+        });
+      }
     });
-    y -= 18;
+
+    y -= rowHeight + 6;
     if (y < 100) {
       page = pdfDoc.addPage([600, 800]);
       ({ width, height } = page.getSize());
       y = height - 50;
+      columns.forEach((col, idx) => {
+        page.drawText(col.label, { x: columnPositions[idx], y, size: 10, font: fontBold });
+      });
+      y -= 18;
     }
   }
 
