@@ -6,18 +6,28 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import type { MenuItem } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { useCafe } from '@/context/CafeContext';
-import placeholderImagesData from '@/lib/placeholder-images.json';
 import { PlusCircle } from 'lucide-react';
+import placeholderImagesData from '@/lib/placeholder-images.json';
 
 interface MenuItemCardProps {
   item: MenuItem;
 }
 
-const { placeholderImages } = placeholderImagesData;
+// Extract the placeholderImages array from the imported data
+const placeholderImages = placeholderImagesData.placeholderImages;
 
 export default function MenuItemCard({ item }: MenuItemCardProps) {
   const { addToCart } = useCafe();
+  // Find the matching placeholder image based on item.imageId
   const placeholder = placeholderImages.find(p => p.id === item.imageId);
+  
+  // Log for debugging
+  console.log('Item:', { id: item.id, name: item.name, imageId: item.imageId, imageUrl: item.imageUrl });
+  console.log('Found placeholder:', placeholder);
+  
+  // Use item.imageUrl if it exists, otherwise use the placeholder's imageUrl
+  const imageToRender =(placeholder ? placeholder.imageUrl : '') ||  item.imageUrl;
+  console.log('Image to render:', imageToRender);
 
   // HIDE IF NOT AVAILABLE
   if (!item.isAvailable) return null;
@@ -26,14 +36,16 @@ export default function MenuItemCard({ item }: MenuItemCardProps) {
     <Card className="flex flex-col overflow-hidden h-full">
       <CardHeader className="p-0">
         <div className="relative aspect-[4/3] w-full">
-          {placeholder && (
+          {imageToRender ? (
             <Image
-              src={placeholder.imageUrl}
+              src={imageToRender}
               alt={item.name}
               fill
               className="object-cover"
-              data-ai-hint={placeholder.imageHint}
+              data-ai-hint={placeholder?.imageHint}
             />
+          ) : (
+            <div className="h-full w-full bg-muted" />
           )}
         </div>
       </CardHeader>

@@ -68,14 +68,16 @@ model VerificationToken {
 
 
 model MenuItem {
-  id          Int      @id @default(autoincrement())
-  name        String
-  description String
-  price       Float
-  category    String
-  imageId     String
-  isAvailable Boolean @default(true)
-  orderItems  OrderItem[]
+  id           Int       @id @default(autoincrement())
+  name         String
+  description  String
+  price        Float
+  category     String
+  imageId      String?
+  imageUrl     String?
+  cloudinaryId String?   // Added this line
+  isAvailable  Boolean   @default(true)
+  orderItems   OrderItem[]
 }
 
 model Usersclear {
