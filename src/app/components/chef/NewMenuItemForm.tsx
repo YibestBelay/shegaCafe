@@ -6,11 +6,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Upload } from 'lucide-react';
 
-const CATEGORIES = ['Food', 'Drink', 'Dessert'] as const;
+const DEFAULT_CATEGORIES = ['Food', 'Drink', 'Dessert'] as const;
+const NEW_CATEGORY_OPTION = 'add-new-category';
 
 export function NewMenuItemForm() {
   const router = useRouter();
@@ -21,8 +28,11 @@ export function NewMenuItemForm() {
     name: '',
     description: '',
     price: '',
-    category: ''
+    category: '',     // selected existing category
+    newCategory: '',  // typed new category (when adding)
   });
+
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
 
   const [file, setFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
@@ -36,11 +46,8 @@ export function NewMenuItemForm() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const chosen = e.target.files?.[0] ?? null;
     setFile(chosen);
-    if (chosen) {
-      setFilePreview(URL.createObjectURL(chosen));
-    } else {
-      setFilePreview(null);
-    }
+    if (chosen) setFilePreview(URL.createObjectURL(chosen));
+    else setFilePreview(null);
   };
 
   const handleClickUpload = () => {
@@ -55,27 +62,32 @@ export function NewMenuItemForm() {
       // Basic client-side validation
       if (!formData.name.trim()) throw new Error('Please provide a name');
       if (!formData.description.trim()) throw new Error('Please provide a description');
-      if (!formData.price || Number.isNaN(Number(formData.price))) throw new Error('Please provide a valid price');
-      if (!formData.category) throw new Error('Please select a category');
+
+      const priceNum = Number(formData.price);
+      if (!formData.price || Number.isNaN(priceNum) || priceNum < 0) {
+        throw new Error('Please provide a valid price');
+      }
+
       if (!file) throw new Error('Please upload an image');
 
-      // Build FormData
+      // Choose category: either the existing selected category or the typed newCategory
+      const categoryToUse = showNewCategoryInput ? formData.newCategory.trim() : formData.category.trim();
+
+      if (!categoryToUse) throw new Error('Please select or enter a category');
+
+      // Build form data for multipart upload
       const payload = new FormData();
-      payload.append('name', formData.name);
-      payload.append('description', formData.description);
-      payload.append('price', String(parseFloat(formData.price)));
-      payload.append('category', formData.category);
+      payload.append('name', formData.name.trim());
+      payload.append('description', formData.description.trim());
+      payload.append('price', String(parseFloat(String(priceNum))));
+      payload.append('category', categoryToUse);
       payload.append('isAvailable', 'true');
 
-      // Append the uploaded file
-      if (file) {
-        payload.append('image', file);
-      }
+      if (file) payload.append('image', file);
 
       const response = await fetch('/api/items', {
         method: 'POST',
-        // DO NOT set Content-Type header — the browser will set multipart/form-data with boundary automatically
-        body: payload,
+        body: payload, // multipart/form-data; server must handle this
       });
 
       if (!response.ok) {
@@ -93,15 +105,14 @@ export function NewMenuItemForm() {
         name: '',
         description: '',
         price: '',
-        category: ''
+        category: '',
+        newCategory: ''
       });
+      setShowNewCategoryInput(false);
       setFile(null);
       setFilePreview(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      if (fileInputRef.current) fileInputRef.current.value = '';
 
-      // Refresh the page to show the new item
       router.refresh();
     } catch (error) {
       toast({
@@ -114,7 +125,6 @@ export function NewMenuItemForm() {
     }
   };
 
-  // File preview URL if available
   const previewUrl = filePreview;
 
   return (
@@ -127,7 +137,6 @@ export function NewMenuItemForm() {
           value={formData.name}
           onChange={handleChange}
           placeholder="e.g., Margherita Pizza"
-          required
         />
       </div>
 
@@ -139,7 +148,6 @@ export function NewMenuItemForm() {
           value={formData.description}
           onChange={handleChange}
           placeholder="A delicious pizza with..."
-          required
           rows={3}
         />
       </div>
@@ -156,28 +164,54 @@ export function NewMenuItemForm() {
             value={formData.price}
             onChange={handleChange}
             placeholder="e.g., 12.99"
-            required
           />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="category">Category</Label>
           <Select
-            value={formData.category}
-            onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
-            required
+            value={showNewCategoryInput ? NEW_CATEGORY_OPTION : formData.category}
+            // Only require when not adding new category
+            onValueChange={(value) => {
+              if (value === NEW_CATEGORY_OPTION) {
+                setShowNewCategoryInput(true);
+                setFormData(prev => ({ ...prev, category: '' }));
+              } else {
+                setShowNewCategoryInput(false);
+                setFormData(prev => ({ ...prev, category: value }));
+              }
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select a category" />
             </SelectTrigger>
             <SelectContent>
-              {CATEGORIES.map((category) => (
+              {DEFAULT_CATEGORIES.map((category) => (
                 <SelectItem key={category} value={category}>
                   {category}
                 </SelectItem>
               ))}
+              <SelectItem value={NEW_CATEGORY_OPTION}>
+                + Add New Category
+              </SelectItem>
             </SelectContent>
           </Select>
+
+          {showNewCategoryInput && (
+            <div className="mt-2">
+              <Input
+                type="text"
+                name="newCategory"
+                value={formData.newCategory}
+                onChange={(e) => setFormData(prev => ({ ...prev, newCategory: e.target.value }))}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.preventDefault();
+                }}
+                placeholder="Enter new category name"
+                className="mt-2"
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -192,13 +226,12 @@ export function NewMenuItemForm() {
             accept="image/*"
             onChange={handleFileChange}
             className="hidden"
-            required
           />
           {previewUrl ? (
             <div className="relative">
-              <img 
-                src={previewUrl} 
-                alt="Preview" 
+              <img
+                src={previewUrl}
+                alt="Preview"
                 className="h-24 w-24 rounded-md object-cover"
               />
               <Button
@@ -212,7 +245,7 @@ export function NewMenuItemForm() {
               </Button>
             </div>
           ) : (
-            <Button 
+            <Button
               type="button"
               variant="outline"
               onClick={handleClickUpload}

@@ -133,7 +133,7 @@ export function EditMenuItem({ item, onClose, onUpdated }: EditMenuItemProps) {
             </div>
           </div>
 
-          <div className="space-y-1">
+          {/* <div className="space-y-1">
             <Label htmlFor="imageId">Image ID</Label>
             <Input
               id="imageId"
@@ -141,7 +141,7 @@ export function EditMenuItem({ item, onClose, onUpdated }: EditMenuItemProps) {
               onChange={(e) => setImageId(e.target.value)}
               placeholder="Optional image identifier"
             />
-          </div>
+          </div> */}
 
           <div className="mt-6 flex justify-end gap-2">
             <Button

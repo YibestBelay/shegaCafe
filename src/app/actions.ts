@@ -28,25 +28,16 @@ async function getUserOrNull() {
 // 1. MENU — FILTERED BY ROLE (CHEF & ADMIN SEE ALL)
 // ------------------------------------------------------------------
 export async function getMenuItems(userRole?: string): Promise<MenuItem[]> {
-  const rows = await prisma.menuItem.findMany({
-    orderBy: { id: 'asc' },
-  });
-
-  const CATEGORY_VALUES = ['Food', 'Drink', 'Dessert'] as const;
-  function isCategory(x: string): x is MenuItem['category'] {
-    return (CATEGORY_VALUES as readonly string[]).includes(x);
-  }
-
   // CHEF & ADMIN: See all items (including hidden)
   const isStaff = userRole && ['chef', 'admin'].includes(userRole.toLowerCase());
   
   // STRICT FILTER: ONLY SHOW isAvailable === true FOR NON-STAFF
-  const filtered = isStaff ? rows : rows.filter(r => r.isAvailable === true);
+  const items = await prisma.menuItem.findMany({
+    orderBy: { id: 'asc' },
+    where: isStaff ? {} : { isAvailable: true },
+  });
 
-  return filtered.map(r => ({
-    ...r,
-    category: isCategory(r.category) ? r.category : 'Food',
-  }));
+  return items;
 }
 
 // ------------------------------------------------------------------

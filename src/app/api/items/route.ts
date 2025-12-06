@@ -107,24 +107,20 @@ export async function POST(request: Request) {
       }
     }
 
-    // Validate
+    // Validate required fields
     if (!name || !description || typeof price !== "number" || Number.isNaN(price) || !category) {
       return NextResponse.json({ error: "Missing required fields or invalid types" }, { status: 400 });
     }
-    const validCategories = ["Food", "Drink", "Dessert"];
-    if (!validCategories.includes(category)) {
-      return NextResponse.json({ error: "Invalid category. Must be one of: Food, Drink, Dessert" }, { status: 400 });
-    }
 
-    const newItem = await prisma.menuItem.create({
+const newItem = await prisma.menuItem.create({
       data: {
         name,
         description,
         price,
         category,
-        imageUrl: imageUrl ?? null,
-        cloudinaryId: cloudinaryId ?? null,
-        imageId: imageId ?? null,
+        imageUrl: imageUrl ?? undefined,
+        cloudinaryId: cloudinaryId ?? undefined,
+        imageId: imageId ?? undefined,
         isAvailable: true,
       },
     });

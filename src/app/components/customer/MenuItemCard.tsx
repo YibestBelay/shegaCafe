@@ -35,7 +35,7 @@ export default function MenuItemCard({ item }: MenuItemCardProps) {
   return (
     <Card className="flex flex-col overflow-hidden h-full">
       <CardHeader className="p-0">
-        <div className="relative aspect-[4/3] w-full">
+        <div className="relative aspect-[5/3] w-full">
           {imageToRender ? (
             <Image
               src={imageToRender}
@@ -49,12 +49,13 @@ export default function MenuItemCard({ item }: MenuItemCardProps) {
           )}
         </div>
       </CardHeader>
-      <CardContent className="p-4 flex-grow">
-        <CardTitle className="font-headline text-xl mb-2">{item.name}</CardTitle>
-        <p className="text-sm text-muted-foreground">{item.description}</p>
+
+      <CardContent className=" relative aspect-[5/3] p-4  overflow-auto scrollbar-hide">
+        <CardTitle className="font-headline text-sm md:text-lg mb-2">{item.name}</CardTitle>
+        <p className="text-sm text-muted-foreground ">{item.description}</p>
       </CardContent>
-      <CardFooter className="p-4 pt-0 flex justify-between items-center">
-        <p className="text-lg font-bold text-primary">{item.price.toFixed(2)} ETB</p>
+      <CardFooter className="p-3 pt-0 flex justify-between items-center gap-2 ">
+        <p className="text-sm font-bold text-primary">{item.price.toFixed(2)} ETB</p>
         <Button onClick={() => addToCart(item.id)}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Add to Order

@@ -7,11 +7,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function CustomerPage() {
   const { menuItems } = useCafe();
-  const [activeTab, setActiveTab] = useState('Food');
+  
+  // Get all unique categories from menu items
+  const categories = Array.from(new Set(menuItems.map(item => item.category)));
+  
+  // Make "Food" default if it exists, otherwise use first available
+  const defaultCategory = categories.includes("Food") ? "Food" : categories[0] || "";
 
-  const foodItems = menuItems.filter((item) => item.category === 'Food');
-  const drinkItems = menuItems.filter((item) => item.category === 'Drink');
-  const dessertItems = menuItems.filter((item) => item.category === 'Dessert');
+  const [activeTab, setActiveTab] = useState(defaultCategory);
+  
+  // Filter items by active tab
+  const filteredItems = menuItems.filter((item) => item.category === activeTab);
 
   return (
     <div className="space-y-8">
@@ -23,20 +29,19 @@ export default function CustomerPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto">
-          <TabsTrigger value="Food">Food</TabsTrigger>
-          <TabsTrigger value="Drink">Drinks</TabsTrigger>
-          <TabsTrigger value="Dessert">Desserts</TabsTrigger>
+        <TabsList className="flex flex-wrap justify-center gap-2 max-w-2xl mx-auto">
+          {categories.map((category) => (
+            <TabsTrigger key={category} value={category}>
+              {category}
+            </TabsTrigger>
+          ))}
         </TabsList>
-        <TabsContent value="Food">
-          <MenuGrid items={foodItems} />
-        </TabsContent>
-        <TabsContent value="Drink">
-          <MenuGrid items={drinkItems} />
-        </TabsContent>
-        <TabsContent value="Dessert">
-          <MenuGrid items={dessertItems} />
-        </TabsContent>
+
+        {categories.map((category) => (
+          <TabsContent key={category} value={category}>
+            <MenuGrid items={menuItems.filter(item => item.category === category)} />
+          </TabsContent>
+        ))}
       </Tabs>
     </div>
   );

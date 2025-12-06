@@ -169,11 +169,11 @@ export async function PUT(request: Request, context: Context) {
       }
     }
 
-    // Validate category if provided
-    const validCategories = ["Food", "Drink", "Dessert"];
-    if (!validCategories.includes(category)) {
-      return NextResponse.json({ error: "Invalid category. Must be one of: Food, Drink, Dessert" }, { status: 400 });
-    }
+    // // Validate category if provided
+    // const validCategories = ["Food", "Drink", "Dessert"];
+    // if (!validCategories.includes(category)) {
+    //   return NextResponse.json({ error: "Invalid category. Must be one of: Food, Drink, Dessert" }, { status: 400 });
+    // }
 
     // Update in DB
     const updated = await prisma.menuItem.update({

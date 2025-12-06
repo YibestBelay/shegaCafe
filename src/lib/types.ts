@@ -3,9 +3,10 @@ export type MenuItem = {
   name: string;
   description: string;
   price: number;
-  category: 'Food' | 'Drink' | 'Dessert';
-  imageId: string;
-  imageUrl?: string;
+  category: string; // Now accepts any string as category
+  imageId?: string | null;
+  imageUrl?: string | null;
+  cloudinaryId?: string | null;
   isAvailable: boolean;
 };
 
