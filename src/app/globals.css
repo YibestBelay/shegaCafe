@@ -4,6 +4,8 @@
 
 @import "tailwindcss";
 @config "../../tailwind.config.js";
+@import "leaflet/dist/leaflet.css";
+
 
 @layer base {
   :root {

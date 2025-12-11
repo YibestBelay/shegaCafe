@@ -15,7 +15,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { Menu } from 'lucide-react';
+import { Menu, MapPin } from 'lucide-react';
 
 const navLinks = [
   { href: '/', label: 'Customer' },
@@ -23,6 +23,7 @@ const navLinks = [
   { href: '/chef', label: 'Chef' },
   { href: '/admin', label: 'Admin' },
   { href: '/about', label: 'About' },
+  { href: '/address', label: 'Location', icon: true },
 ];
 
 export default function Header() {
@@ -42,7 +43,11 @@ export default function Header() {
                 pathname === href ? 'text-primary' : 'text-muted-foreground'
               )}
             >
-              {label}
+              {label === 'Location' ? (
+                <MapPin className="h-5 w-5" />
+              ) : (
+                label
+              )}
             </Link>
           ))}
         </nav>
@@ -75,7 +80,11 @@ export default function Header() {
                           : 'text-muted-foreground'
                       )}
                     >
-                      {label}
+                      {label === 'Location' ? (
+                        <MapPin className="h-5 w-5" />
+                      ) : (
+                        label
+                      )}
                     </Link>
                   </SheetClose>
                 ))}
