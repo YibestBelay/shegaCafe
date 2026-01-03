@@ -54,10 +54,10 @@ export default function MenuItemCard({ item }: MenuItemCardProps) {
         <CardTitle className="font-headline text-sm md:text-lg mb-2">{item.name}</CardTitle>
         <p className="text-sm text-muted-foreground ">{item.description}</p>
       </CardContent>
-      <CardFooter className="p-3 pt-0 flex justify-between items-center gap-2 ">
-        <p className="text-sm font-bold text-primary">{item.price.toFixed(2)} ETB</p>
-        <Button onClick={() => addToCart(item.id)}>
-          <PlusCircle className="mr-2 h-4 w-4" />
+      <CardFooter className="p-3 pt-0 text-xs flex justify-between items-center gap-2 ">
+        <p className="text-xs md:text-sm lg:text-base font-bold text-primary">{item.price.toFixed(2)} ETB</p>
+        <Button onClick={() => addToCart(item.id)} size="sm" className="text-xs">
+          <PlusCircle className="h-4 w-4" />
           Add to Order
         </Button>
       </CardFooter>

@@ -27,7 +27,7 @@ export default function AboutPage() {
             </div>
             <div className="flex items-center gap-4">
                 <User className="w-5 h-5 text-primary" />
-                <p><span className="font-semibold">Natnael Berhanu</span></p>
+                <p><span className="font-semibold">Natnael Berhanu and  Yibeltal Belay</span></p>
             </div>
             <div className="flex items-center gap-4">
                 <MapPin className="w-5 h-5 text-primary" />
